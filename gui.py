@@ -1,8 +1,10 @@
 import os
 import subprocess
+import shutil
 from sys import stderr, stdout
 from tkinter import *
 from tkinter import ttk
+from tkinter import filedialog
 from subprocess import call, run
 import docker
 from docker.api import volume
@@ -61,17 +63,26 @@ def create_new_project():
     else:
         pass
 
-def add_verilog_file():
-    pass
-
 def proceed():
     prep_design_console.grid_forget()
     proceed_btn.grid_forget()
     label.configure(text="Upload your verilog files")
-    add_verilog_btn.grid(row=2, columnspan=3)
+    browse_file_btn.grid(row=2, columnspan=3, pady=10)
 
-def upload_verilog_files():
+def browse_files():
+    global filepath; filepath = filedialog.askopenfilename(initialdir="/home/",
+                                          title="Select a File",
+                                          filetypes= (("Verilog files", "*.v*"),))
+    label.configure(text="File selected: " + filepath)
+    global filename
+    filename = os.path.basename(filepath)
+    browse_file_btn.grid_forget()
+    upload_verilog_btn.grid(row=2, columnspan=3, pady=10)
 
+def upload_selected_verilog():
+    shutil.copy(filepath, openlane_root+"/designs/"+project_name.get()+"/src/"+filename)
+
+def begin_param_insertion():
     pass
 
 root = Tk()
@@ -89,5 +100,7 @@ project_name_entry = ttk.Entry(frame, textvariable=project_name)
 create_project_btn = ttk.Button(frame, text="Create", command=start)
 prep_design_console = Text(frame, width=80, height=20)
 proceed_btn = ttk.Button(frame, text="Proceed", command=proceed)
-add_verilog_btn = ttk.Button(frame, text="Add Verilog", command=upload_verilog_files)
+browse_file_btn = ttk.Button(frame, text="Add Verilog", command=browse_files)
+next_btn = ttk.Button(frame, text="Next", command=begin_param_insertion)
+upload_verilog_btn = ttk.Button(frame, text="Upload", command=upload_selected_verilog)
 root.mainloop()
