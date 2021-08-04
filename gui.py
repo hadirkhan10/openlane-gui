@@ -145,6 +145,31 @@ def clk_metric_changed():
         clk_port_label.grid_forget()
         clk_port_entry.grid_forget()
 
+def floorplan_rel():
+    die_area_lower_x_label.grid_forget()
+    die_area_lower_x_entry.grid_forget()
+    die_area_lower_y_label.grid_forget()
+    die_area_lower_y_entry.grid_forget()
+    die_area_upper_x_label.grid_forget()
+    die_area_upper_x_entry.grid_forget()
+    die_area_upper_y_label.grid_forget()
+    die_area_upper_y_entry.grid_forget()
+
+    core_utilization_label.grid(row=7, column=0)
+    core_utilization_entry.grid(row=7, column=1)
+
+def floorplan_abs():
+    core_utilization_label.grid_forget()
+    core_utilization_entry.grid_forget()
+
+    die_area_lower_x_label.grid(row=7, column=0)
+    die_area_lower_x_entry.grid(row=7, column=1)
+    die_area_lower_y_label.grid(row=8, column=0)
+    die_area_lower_y_entry.grid(row=8, column=1)
+    die_area_upper_x_label.grid(row=9, column=0)
+    die_area_upper_x_entry.grid(row=9, column=1)
+    die_area_upper_y_label.grid(row=10, column=0)
+    die_area_upper_y_entry.grid(row=10, column=1)
 
 def begin_param_insertion():
     label.configure(text="Set the design parameters as you like. Fields left empty will have defualt values.")
@@ -152,7 +177,10 @@ def begin_param_insertion():
     top_name_label.grid(row=2, column=0)
     top_name_entry.grid(row=2, column=1)
     clock_en_check.grid(row=3, column=0)
-    begin_run_btn.grid(row=6, column=0)
+    flr_plan_type_label.grid(row=6, column=0)
+    flr_plan_rel_rad_btn.grid(row=6, column=1)
+    flr_plan_abs_rad_btn.grid(row=6, column=2)
+    begin_run_btn.grid(row=11, column=0)
 
 def begin_openlane_run():
     print("clock enable is: " + str(clock_en.get()))
@@ -215,5 +243,33 @@ clk_port_label = ttk.Label(frame, text="Clock Port Name:")
 top_name = StringVar()
 top_name_entry = ttk.Entry(frame, textvariable=top_name)
 top_name_label = ttk.Label(frame, text="Verilog Top Name:")
+
+# creating floorplanning type views
+flr_plan_rel = IntVar()
+flr_plan_abs = IntVar()
+flr_plan_type_label = ttk.Label(frame, text="Floorplanning Type:")
+flr_plan_rel_rad_btn = ttk.Radiobutton(frame, text="Relative", variable=flr_plan_rel, command=floorplan_rel)
+flr_plan_abs_rad_btn = ttk.Radiobutton(frame, text="Absolute", variable=flr_plan_abs, command=floorplan_abs)
+
+# creating core_utilization view (when floorplanning type is relative)
+core_utilization = StringVar()
+core_utilization_label = ttk.Label(frame, text="Core utilization:")
+core_utilization_entry = ttk.Entry(frame, textvariable=core_utilization)
+
+# creating die area views (when floorplanning type is absolute)
+die_area_lower_x = StringVar()
+die_area_lower_y = StringVar()
+die_area_upper_x = StringVar()
+die_area_upper_y = StringVar()
+die_area_lower_x_label = ttk.Label(frame, text="x0:")
+die_area_lower_y_label = ttk.Label(frame, text="y0:")
+die_area_upper_x_label = ttk.Label(frame, text="x1:")
+die_area_upper_y_label = ttk.Label(frame, text="y1:")
+die_area_lower_x_entry = ttk.Entry(frame, textvariable=die_area_lower_x)
+die_area_lower_y_entry = ttk.Entry(frame, textvariable=die_area_lower_y)
+die_area_upper_x_entry = ttk.Entry(frame, textvariable=die_area_upper_x)
+die_area_upper_y_entry = ttk.Entry(frame, textvariable=die_area_upper_y)
+
+
 begin_run_btn = ttk.Button(frame, text="Begin", command=begin_openlane_run)
 root.mainloop()
