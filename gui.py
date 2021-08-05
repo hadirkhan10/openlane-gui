@@ -9,10 +9,12 @@ from subprocess import call, run
 import docker
 from docker.api import volume
 import config
+import floorplan
 
 pdk_root = ""
 openlane_root = ""
 project_path = ""
+design_name = ""
 
 def start():
     project_name_entry.grid_forget()
@@ -63,7 +65,8 @@ def open_existing_project():
 def create_design():
     print("entry is " + project_name.get())
     print(openlane_root)
-    
+    global project_path
+    project_path = openlane_root + "/designs/" + project_name.get()
     client = docker.from_env()
     container = client.containers.run('efabless/openlane:current', command='./flow.tcl -design ' + project_name.get() + ' -init_design_config', 
         volumes={openlane_root: {'bind': '/openLANE_flow', 'mode': 'rw'},
@@ -109,9 +112,10 @@ def browse_dir():
     global project_path
     project_path = filedialog.askdirectory(initialdir=openlane_root, title="Select your project")
     print(project_path)
-    project_name = os.path.basename(project_path)
+    global design_name
+    design_name = os.path.basename(project_path)
     projects = os.listdir(openlane_root+"/designs")
-    if project_name not in projects:
+    if design_name not in projects:
         label.configure(text="your project does not exist or the path you selected is not appropriate. Please browse again..")
     else:
         label.configure(text="project is found successfully")
@@ -199,12 +203,44 @@ def begin_openlane_run():
     else:
         print("ERROR: some required fields are missing for clock")
 
+    if(flr_plan_type.get() == "relative"):
+        floorplan.set_rel_floorplan(core_util=core_utilization.get(), file=f)
+    elif(flr_plan_type.get() == "absolute"):
+        floorplan.set_abs_floorplan(die_area_lower_x.get(), die_area_lower_y.get(), die_area_upper_x.get(), die_area_upper_y.get(), file=f)
+    else:
+        print("some unexpected value for floorplanning type provided..")
+
     f.write('set filename $::env(DESIGN_DIR)/$::env(PDK)_$::env(STD_CELL_LIBRARY)_config.tcl \n')
     f.write('if { [file exists $filename] == 1} { \n')
     f.write('source $filename \n')
     f.write('} \n')
     f.close()
 
+    client = docker.from_env()
+    try:
+        container = client.containers.run('efabless/openlane:current', command='./flow.tcl -design ' + design_name, 
+            volumes={openlane_root: {'bind': '/openLANE_flow', 'mode': 'rw'},
+                    pdk_root: {'bind': pdk_root, 'mode':'rw'}},
+            environment=["PDK_ROOT=" + pdk_root],
+            user=1001,
+            detach=False,
+            stdout=True,
+            stderr=True)
+        create_new_window(str(container.decode("utf-8")))
+        print(str(container.decode("utf-8")))
+    except Exception as e:
+        print("ERROR ENCOUNTERED \n")
+        create_new_window(bytes(str(e), "utf-8").decode("unicode_escape"))
+        print(str(e))
+
+def create_new_window(msg):
+    window = Toplevel(root)
+    info_label = ttk.Label(window, text="Your run is completed here are the logs:")
+    console_log = Text(window, width=80, height=40)
+    console_log.insert("1.0", msg)
+    info_label.grid(row=1, column=0)
+    console_log.grid(row=2, column=0)
+    window.mainloop()
 
 root = Tk()
 root.title("OpenLANE Graphical User Interface")
@@ -245,11 +281,10 @@ top_name_entry = ttk.Entry(frame, textvariable=top_name)
 top_name_label = ttk.Label(frame, text="Verilog Top Name:")
 
 # creating floorplanning type views
-flr_plan_rel = IntVar()
-flr_plan_abs = IntVar()
+flr_plan_type = StringVar()
 flr_plan_type_label = ttk.Label(frame, text="Floorplanning Type:")
-flr_plan_rel_rad_btn = ttk.Radiobutton(frame, text="Relative", variable=flr_plan_rel, command=floorplan_rel)
-flr_plan_abs_rad_btn = ttk.Radiobutton(frame, text="Absolute", variable=flr_plan_abs, command=floorplan_abs)
+flr_plan_rel_rad_btn = ttk.Radiobutton(frame, text="Relative", variable=flr_plan_type, value="relative", command=floorplan_rel)
+flr_plan_abs_rad_btn = ttk.Radiobutton(frame, text="Absolute", variable=flr_plan_type, value="absolute", command=floorplan_abs)
 
 # creating core_utilization view (when floorplanning type is relative)
 core_utilization = StringVar()
